@@ -252,7 +252,7 @@ describe('Complete Authentication Cleanup and Verification', () => {
       
       // Mock incomplete cleanup
       (mockSupabase.auth.getSession as jest.MockedFunction<typeof mockSupabase.auth.getSession>).mockResolvedValue({ 
-        data: { session: mockSession as any }, 
+        data: { session: mockSession as { user: { id: string } } }, 
         error: null 
       });
       mockGetBusinessContext.mockReturnValue(mockBusinessId);

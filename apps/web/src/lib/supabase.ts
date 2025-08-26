@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 import { env } from './env';
 import type { Database } from './database.types';
 
@@ -17,7 +18,6 @@ function createSupabaseClient() {
     // Check if we're in browser environment
     if (typeof window !== 'undefined') {
       // Browser environment - use SSR-compatible browser client
-      const { createBrowserClient } = require('@supabase/ssr');
       return createBrowserClient(supabaseUrl, supabaseAnonKey);
     } else {
       // Server environment - use regular client without session persistence

@@ -239,7 +239,7 @@ describe('RegisterPage', () => {
 
   it('shows loading state during registration', async () => {
     const user = userEvent.setup();
-    let resolveSignUp: (value: any) => void;
+    let resolveSignUp: (value: { data?: { user?: { id: string } } } | null) => void;
     mockAuth.signUp.mockImplementation(() => 
       new Promise(resolve => {
         resolveSignUp = resolve;

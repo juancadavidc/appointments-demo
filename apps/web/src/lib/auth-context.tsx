@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, ReactNode } from 'react';
 import { auth, type AuthUser, type AuthError } from './auth';
 import { businessContext } from './business-context';
 import type { SessionTimeoutConfig } from './logout-session-management';
@@ -46,6 +46,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const initializeAuth = async () => {
       try {
         console.log('🔐 AuthContext: Initializing auth state...');
+        
+        // Fast synchronous check first - if no auth cookies, skip slow async check
+        const likelyAuthenticated = auth.isLikelyAuthenticated();
+        if (!likelyAuthenticated) {
+          console.log('🔐 AuthContext: No auth cookies found, user not authenticated');
+          return;
+        }
+        
+        console.log('🔐 AuthContext: Auth cookies found, verifying session...');
         
         // Check session with improved error handling
         const result = await auth.getSession();
@@ -465,6 +474,9 @@ export function useBusinessContext(options?: { autoSelect?: boolean; skipCache?:
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Stabilize options to prevent infinite re-renders
+  const stableOptions = useMemo(() => options, [options?.autoSelect, options?.skipCache]);
 
   useEffect(() => {
     let mounted = true;
@@ -479,7 +491,7 @@ export function useBusinessContext(options?: { autoSelect?: boolean; skipCache?:
         setIsLoading(true);
         setError(null);
         
-        const result = await getCurrentBusinessIdAsync(options);
+        const result = await getCurrentBusinessIdAsync(stableOptions);
         
         if (mounted) {
           setBusinessId(result);
@@ -487,7 +499,13 @@ export function useBusinessContext(options?: { autoSelect?: boolean; skipCache?:
         }
       } catch (err) {
         if (mounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load business context');
+          // Handle specific timeout error
+          if (err instanceof Error && err.message === 'TIMEOUT') {
+            console.warn('🔄 Business context loading timed out, user may need to register business');
+            setError('TIMEOUT');
+          } else {
+            setError(err instanceof Error ? err.message : 'Failed to load business context');
+          }
           setIsLoading(false);
         }
       }
@@ -498,7 +516,7 @@ export function useBusinessContext(options?: { autoSelect?: boolean; skipCache?:
     return () => {
       mounted = false;
     };
-  }, [user, isInitialized, getCurrentBusinessIdAsync, options?.autoSelect, options?.skipCache]);
+  }, [user, isInitialized, getCurrentBusinessIdAsync, stableOptions]);
 
   return {
     user,

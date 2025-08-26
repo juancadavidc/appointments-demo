@@ -343,7 +343,7 @@ describe('LoginPage', () => {
 
   it('shows loading state during login', async () => {
     const user = userEvent.setup();
-    let resolveSignIn: (value: any) => void;
+    let resolveSignIn: (value: { data?: { session?: { user: { id: string } } } } | null) => void;
     mockAuth.signIn.mockImplementation(() => 
       new Promise(resolve => {
         resolveSignIn = resolve;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth, useBusinessContext } from '@/lib/auth-context';
+import { useBusinessContext } from '@/lib/auth-context';
 import { BusinessProfileCard } from '@/components/business/business-profile-card';
 import { BusinessProfileEditForm } from '@/components/business/business-profile-edit-form';
 import { BusinessSettingsPanel } from '@/components/business/business-settings-panel';

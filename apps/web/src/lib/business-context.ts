@@ -69,10 +69,35 @@ export const businessContext = {
   },
 
   /**
-   * Enhanced get current business ID with database fallback
+   * Enhanced get current business ID with database fallback and timeout
    * Automatically queries database if no localStorage business ID exists
    */
   async getCurrentBusinessIdAsync(options: GetBusinessIdOptions = {}): Promise<string | null> {
+
+    // Create timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Business context loading timeout')), 2000);
+    });
+
+    try {
+      // Wrap the entire operation with timeout
+      return await Promise.race([
+        this._getCurrentBusinessIdAsyncInternal(options),
+        timeoutPromise
+      ]);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Business context loading timeout') {
+        console.warn('⏰ Business context loading timed out after 2 seconds');
+        throw new Error('TIMEOUT');
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Internal implementation of getCurrentBusinessIdAsync without timeout
+   */
+  async _getCurrentBusinessIdAsyncInternal(options: GetBusinessIdOptions = {}): Promise<string | null> {
     const { autoSelect = true, userId, skipCache = false } = options;
 
     // Check localStorage cache first (unless skipping cache)
@@ -102,36 +127,62 @@ export const businessContext = {
       }
     }
 
-    // No valid cached business ID - query database
+    // No valid cached business ID - query database with retry logic
     console.log('Auto-selecting business', autoSelect);
     if (autoSelect) {
-      try {
-        const businesses = await this.getUserBusinesses(userId);
+      const businesses = await this._getUserBusinessesWithRetry(userId);
+      
+      console.log('Businesses', businesses);
+      if (businesses.length > 0) {
+        // Auto-select first business
+        const selectedBusinessId = businesses[0].id;
         
-        console.log('Businesses', businesses);
-        if (businesses.length > 0) {
-          // Auto-select first business
-          const selectedBusinessId = businesses[0].id;
-          
-          // Cache the selection in localStorage
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(STORAGE_KEY, selectedBusinessId);
-          }
-          
-          console.log('🏢 Auto-selected business:', { 
-            businessId: selectedBusinessId, 
-            businessName: businesses[0].name,
-            totalBusinesses: businesses.length 
-          });
-          
-          return selectedBusinessId;
+        // Cache the selection in localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_KEY, selectedBusinessId);
         }
-      } catch (error) {
-        console.error('Failed to fetch user businesses for auto-selection:', error);
+        
+        console.log('🏢 Auto-selected business:', { 
+          businessId: selectedBusinessId, 
+          businessName: businesses[0].name,
+          totalBusinesses: businesses.length 
+        });
+        
+        return selectedBusinessId;
       }
     }
 
     return null;
+  },
+
+  /**
+   * Get user businesses with retry logic and exponential backoff
+   */
+  async _getUserBusinessesWithRetry(userId?: string, maxRetries: number = 2): Promise<UserBusiness[]> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Add exponential backoff delay for retries
+        if (attempt > 0) {
+          const delay = Math.min(500 * Math.pow(2, attempt - 1), 1000); // 500ms, 1000ms max
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        return await this.getUserBusinesses(userId);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        console.warn(`Attempt ${attempt + 1}/${maxRetries} failed:`, lastError.message);
+        
+        // Don't retry on the last attempt
+        if (attempt === maxRetries - 1) {
+          break;
+        }
+      }
+    }
+    
+    console.error('All attempts to fetch user businesses failed:', lastError?.message);
+    throw lastError || new Error('Failed to fetch user businesses after retries');
   },
 
   /**

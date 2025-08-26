@@ -38,14 +38,14 @@ describe('Business Registration Page Integration Logic', () => {
       back: jest.fn(),
       forward: jest.fn(),
       prefetch: jest.fn(),
-    } as any);
+    } as ReturnType<typeof useRouter>);
 
     // Setup fetch mock
     mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
   });
 
   // Helper function to create proper Response mocks
-  const createMockResponse = (response: any, status: number, statusText: string): Response => ({
+  const createMockResponse = (response: Record<string, unknown>, status: number, statusText: string): Response => ({
     ...response,
     headers: new Headers(),
     redirected: false,

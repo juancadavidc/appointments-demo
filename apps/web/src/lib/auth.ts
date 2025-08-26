@@ -195,6 +195,30 @@ export const auth = {
     }
   },
 
+  // Quick synchronous check if user is likely authenticated (checks cookies)
+  isLikelyAuthenticated: (): boolean => {
+    if (typeof window === 'undefined') {
+      return false; // Server-side, assume not authenticated
+    }
+    
+    try {
+      // Check for Supabase auth cookies - they follow pattern sb-<project-ref>-auth-token
+      const cookies = document.cookie.split(';');
+      const hasAuthCookie = cookies.some(cookie => 
+        cookie.trim().startsWith('sb-') && cookie.includes('-auth-token')
+      );
+      
+      // Also check localStorage for additional confirmation
+      const hasLocalStorage = localStorage.getItem('supabase.auth.token') !== null;
+      
+      return hasAuthCookie || hasLocalStorage;
+    } catch (error) {
+      // If we can't check cookies/localStorage, assume not authenticated
+      console.warn('🔐 Auth: Unable to check authentication cookies:', error);
+      return false;
+    }
+  },
+
   // Get current user session
   getSession: async (): Promise<AuthResult<{ session: Session | null }>> => {
     try {

@@ -42,15 +42,20 @@ export function ProtectedRoute({
 
     if (requireBusinessContext) {
       if (businessError) {
-        // Error loading business context, redirect to business registration
-        console.error('Business context error:', businessError);
-        router.push('/register/business');
+        // Handle different error types
+        if (businessError === 'TIMEOUT') {
+          console.warn('🔄 Business context loading timed out, redirecting to business registration');
+          router.push('/register/business?reason=timeout');
+        } else {
+          console.error('Business context error:', businessError);
+          router.push('/register/business?reason=error');
+        }
         return;
       }
       
       if (!businessId) {
         // User is authenticated but no business found after auto-selection
-        router.push('/register/business');
+        router.push('/register/business?reason=no-business');
         return;
       }
     }
@@ -65,6 +70,11 @@ export function ProtectedRoute({
           <p className="text-gray-600">
             {authLoading ? 'Verificando autenticación...' : 'Cargando contexto del negocio...'}
           </p>
+          {requireBusinessContext && isBusinessLoading && (
+            <p className="text-sm text-gray-400 mt-2">
+              Esto solo toma unos segundos
+            </p>
+          )}
         </div>
       </div>
     );

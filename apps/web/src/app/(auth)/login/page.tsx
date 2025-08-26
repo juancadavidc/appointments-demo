@@ -24,12 +24,22 @@ function LoginForm() {
       try {
         console.log('🔐 Login: Checking existing authentication...');
         
-        // Check session with improved error handling
+        // Fast synchronous check first - if no auth cookies, skip slow async check
+        const likelyAuthenticated = auth.isLikelyAuthenticated();
+        if (!likelyAuthenticated) {
+          console.log('🔐 Login: No auth cookies found, showing login form immediately');
+          setCheckingAuth(false);
+          return;
+        }
+        
+        console.log('🔐 Login: Auth cookies found, verifying session...');
+        
+        // Only do the slow async check if cookies suggest user might be authenticated
         const result = await auth.getSession();
         const { data, error } = result;
         
         if (error) {
-          console.warn('🔐 Login: Session check failed:', error.message);
+          console.warn('🔐 Login: Session verification failed:', error.message);
           // Continue to show login form if session check fails
           return;
         }
@@ -43,7 +53,7 @@ function LoginForm() {
           return;
         }
         
-        console.log('🔐 Login: No existing session, showing login form');
+        console.log('🔐 Login: Session verification complete, no valid session');
       } catch (error) {
         console.error('🔐 Login: Error checking authentication:', error);
         // Continue to show login form even if auth check fails

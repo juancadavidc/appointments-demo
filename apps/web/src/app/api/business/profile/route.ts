@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { businessDb } from '@/lib/database';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
@@ -19,7 +18,7 @@ const createServerClientFromRequest = async () => {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
@@ -163,7 +162,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Transform the nested address structure to flat database structure
-    const dbUpdates: any = { ...businessUpdates };
+    const dbUpdates: Record<string, unknown> = { ...businessUpdates };
     if (businessUpdates.address) {
       delete dbUpdates.address;
       dbUpdates.street = businessUpdates.address.street;

@@ -156,7 +156,7 @@ describe('Authentication Validation Schemas', () => {
           });
         } catch (error: unknown) {
           if (error instanceof Error && 'issues' in error) {
-            const zodError = error as any; // ZodError type compatibility
+            const zodError = error as { issues: Array<{ path: string[]; message: string }> };
             const errors = extractValidationErrors(zodError);
             expect(errors).toHaveProperty('email');
             expect(errors).toHaveProperty('password');
@@ -201,7 +201,7 @@ describe('Authentication Validation Schemas', () => {
         });
       } catch (error: unknown) {
         if (error instanceof Error && 'issues' in error) {
-          const zodError = error as any; // ZodError type compatibility
+          const zodError = error as { issues: Array<{ path: string[]; message: string }> };
           const errors = extractValidationErrors(zodError);
           expect(errors.confirmPassword).toContain('contraseñas no coinciden');
         }
