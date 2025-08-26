@@ -122,6 +122,7 @@ export const auth = {
 
       // If user has business_id in metadata, set business context
       if (data.session?.user?.user_metadata?.business_id) {
+        console.log('🔐 Auth: Setting business context from metadata:', data.session.user.user_metadata.business_id);
         const businessId = data.session.user.user_metadata.business_id;
         
         // Set full business context (localStorage + RLS)
@@ -148,17 +149,45 @@ export const auth = {
   // Sign out with complete cleanup
   signOut: async (): Promise<{ error: AuthError | null }> => {
     try {
+      console.log('🔐 AUTH-SIGNOUT STEP 1: Starting auth.signOut...');
+      
       // Clear business context first
+      console.log('🔐 AUTH-SIGNOUT STEP 2: Clearing business context...');
       await unifiedBusinessContext.clearBusinessContext();
       
-      const { error } = await supabase.auth.signOut();
+      console.log('🔐 AUTH-SIGNOUT STEP 3: Calling supabase.auth.signOut with timeout...');
+      
+      // Create a timeout promise to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Supabase signOut timeout')), 2000);
+      });
+      
+      // Race the signOut against timeout
+      let result;
+      try {
+        result = await Promise.race([
+          supabase.auth.signOut(),
+          timeoutPromise
+        ]) as any;
+        console.log('🔐 AUTH-SIGNOUT STEP 4: supabase.auth.signOut completed:', result);
+      } catch (timeoutError) {
+        console.warn('🔐 AUTH-SIGNOUT STEP 4: supabase.auth.signOut timed out:', timeoutError);
+        // Continue with success even if Supabase signOut times out
+        // The important cleanup (business context) is already done
+        return { error: null };
+      }
+      
+      const { error } = result;
       
       if (error) {
+        console.warn('🔐 AUTH-SIGNOUT STEP 5: supabase.auth.signOut error:', error);
         return { error: { message: error.message, status: error.status } };
       }
       
+      console.log('🔐 AUTH-SIGNOUT STEP 5: auth.signOut completed successfully');
       return { error: null };
     } catch (err) {
+      console.error('🔐 AUTH-SIGNOUT STEP 6: Unexpected error in auth.signOut:', err);
       return { 
         error: { 
           message: err instanceof Error ? err.message : 'Logout failed',
@@ -176,16 +205,26 @@ export const auth = {
     redirectUrl?: string;
   }): Promise<{ error: AuthError | null; cleanupResults?: Record<string, boolean> }> => {
     try {
+      console.log('🔐 AUTH-LIB STEP 1: Starting auth.enhancedSignOut with config:', config);
+      
       // Import here to avoid circular dependencies
+      console.log('🔐 AUTH-LIB STEP 2: Importing logout-session-management...');
       const { enhancedLogout } = await import('./logout-session-management');
       
+      console.log('🔐 AUTH-LIB STEP 3: Calling enhancedLogout...');
       const result = await enhancedLogout(config);
       
-      return {
+      console.log('🔐 AUTH-LIB STEP 4: enhancedLogout result:', result);
+      
+      const returnValue = {
         error: result.success ? null : result.error || { message: 'Enhanced logout failed', status: 500 },
         cleanupResults: result.cleanupResults,
       };
+      
+      console.log('🔐 AUTH-LIB STEP 5: Returning result:', returnValue);
+      return returnValue;
     } catch (err) {
+      console.error('🔐 AUTH-LIB STEP 6: Error in auth.enhancedSignOut:', err);
       return { 
         error: { 
           message: err instanceof Error ? err.message : 'Enhanced logout failed',

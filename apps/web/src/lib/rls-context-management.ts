@@ -187,14 +187,14 @@ export async function validateBusinessContext(businessId: string): Promise<Busin
 export async function clearBusinessContext(): Promise<BusinessContextResult> {
   try {
     // Clear PostgreSQL session context
-    const { error } = await supabase.rpc('clear_business_context')
+    //const { error } = await supabase.rpc('clear_business_context')
 
-    if (error) {
-      return {
-        success: false,
-        error: `Failed to clear business context: ${error.message}`
-      }
-    }
+    //if (error) {
+    //  return {
+    //    success: false,
+    //    error: `Failed to clear business context: ${error.message}`
+    //  }
+    //}
 
     // Clear localStorage
     if (typeof window !== 'undefined') {

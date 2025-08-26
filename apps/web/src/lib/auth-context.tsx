@@ -233,53 +233,61 @@ export function AuthProvider({ children }: AuthProviderProps) {
     redirectToLogin?: boolean;
     redirectUrl?: string;
   }) => {
+    console.log('🔐 AUTH-CONTEXT STEP 1: Starting enhanced signOut process with config:', config);
     setIsLoading(true);
+    
     try {
-      console.log('🔐 AuthContext: Starting enhanced signOut process with config:', config);
-      
+      console.log('🔐 AUTH-CONTEXT STEP 2: Calling auth.enhancedSignOut...');
       const result = await auth.enhancedSignOut(config);
       
+      console.log('🔐 AUTH-CONTEXT STEP 3: auth.enhancedSignOut result:', result);
+      
       if (result.error) {
-        console.error('🔐 AuthContext: Enhanced signOut failed:', result.error);
+        console.error('🔐 AUTH-CONTEXT STEP 4: Enhanced signOut failed:', result.error);
         
         // Even if enhanced logout fails, try emergency cleanup
-        console.log('🔐 AuthContext: Attempting emergency cleanup after enhanced signOut failure');
+        console.log('🔐 AUTH-CONTEXT STEP 5: Attempting emergency cleanup after enhanced signOut failure');
         try {
           await businessContext.clearBusinessContext();
+          console.log('🔐 AUTH-CONTEXT STEP 5a: Business context cleared');
           setUser(null);
+          console.log('🔐 AUTH-CONTEXT STEP 5b: User state cleared');
           
           // Force redirect if configured, even on failure
           if (config?.redirectToLogin && typeof window !== 'undefined') {
             const redirectUrl = config.redirectUrl || '/login';
-            console.log('🔐 AuthContext: Force redirecting after failed logout to:', redirectUrl);
+            console.log('🔐 AUTH-CONTEXT STEP 5c: Force redirecting after failed logout to:', redirectUrl);
             window.location.replace(redirectUrl);
           }
         } catch (cleanupError) {
-          console.error('🔐 AuthContext: Emergency cleanup also failed:', cleanupError);
+          console.error('🔐 AUTH-CONTEXT STEP 5d: Emergency cleanup also failed:', cleanupError);
         }
       } else {
-        console.log('🔐 AuthContext: Enhanced signOut completed successfully');
-        // Clear user state immediately to prevent UI inconsistencies
+        console.log('🔐 AUTH-CONTEXT STEP 4: Enhanced signOut completed successfully');
+        console.log('🔐 AUTH-CONTEXT STEP 5: Clearing user state immediately...');
         setUser(null);
+        console.log('🔐 AUTH-CONTEXT STEP 6: User state cleared');
       }
       
       return result;
     } catch (error) {
-      console.error('🔐 AuthContext: Unexpected error during enhanced sign out:', error);
+      console.error('🔐 AUTH-CONTEXT STEP 7: Unexpected error during enhanced sign out:', error);
       
       // Emergency fallback - clear everything and redirect
       try {
-        console.log('🔐 AuthContext: Performing emergency fallback logout');
+        console.log('🔐 AUTH-CONTEXT STEP 8: Performing emergency fallback logout');
         await businessContext.clearBusinessContext();
+        console.log('🔐 AUTH-CONTEXT STEP 8a: Emergency business context cleared');
         setUser(null);
+        console.log('🔐 AUTH-CONTEXT STEP 8b: Emergency user state cleared');
         
         if (config?.redirectToLogin && typeof window !== 'undefined') {
           const redirectUrl = config.redirectUrl || '/login?reason=emergency';
-          console.log('🔐 AuthContext: Emergency redirect to:', redirectUrl);
+          console.log('🔐 AUTH-CONTEXT STEP 8c: Emergency redirect to:', redirectUrl);
           window.location.replace(redirectUrl);
         }
       } catch (fallbackError) {
-        console.error('🔐 AuthContext: Emergency fallback failed:', fallbackError);
+        console.error('🔐 AUTH-CONTEXT STEP 8d: Emergency fallback failed:', fallbackError);
       }
       
       return { 
@@ -288,6 +296,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } 
       };
     } finally {
+      console.log('🔐 AUTH-CONTEXT STEP 9: Setting isLoading to false');
       setIsLoading(false);
     }
   };

@@ -41,37 +41,49 @@ export function BusinessSidebar({ isOpen, onClose }: BusinessSidebarProps) {
   };
 
   const handleSignOutConfirm = async () => {
+    console.log('🔐 LOGOUT STEP 1: User confirmed logout, starting process...');
     setIsLoggingOut(true);
     setLogoutError(null);
     setShowLogoutConfirm(false);
     
     try {
-      console.log('🔐 Logout: Starting enhanced logout process');
+      console.log('🔐 LOGOUT STEP 2: Calling enhancedSignOut with config:', {
+        clearBusinessContext: true,
+        clearLocalStorage: true,
+        redirectToLogin: true,
+        redirectUrl: '/login?logout=true'
+      });
+      
       const result = await enhancedSignOut({
         clearBusinessContext: true,
         clearLocalStorage: true,
         redirectToLogin: true,
-        redirectUrl: '/login?reason=logout'
+        redirectUrl: '/login?logout=true'
       });
       
+      console.log('🔐 LOGOUT STEP 3: Enhanced logout result:', result);
+      
       if (result.error) {
-        console.error('🔐 Logout: Enhanced logout failed:', result.error);
+        console.error('🔐 LOGOUT STEP 4: Enhanced logout failed:', result.error);
+        console.log('🔐 LOGOUT STEP 4a: Cleanup results:', result.cleanupResults);
         setLogoutError(result.error.message);
         setIsLoggingOut(false);
       } else {
-        console.log('🔐 Logout: Enhanced logout successful');
+        console.log('🔐 LOGOUT STEP 4: Enhanced logout successful, cleanup results:', result.cleanupResults);
+        console.log('🔐 LOGOUT STEP 5: Waiting for automatic redirect...');
         // Redirect will happen automatically via enhancedSignOut
       }
     } catch (error) {
-      console.error('🔐 Logout: Unexpected error during logout:', error);
+      console.error('🔐 LOGOUT STEP 6: Unexpected error during logout:', error);
       setLogoutError('Error inesperado durante el cierre de sesión');
       setIsLoggingOut(false);
       
       // Force redirect even on error
       try {
-        window.location.replace('/login?reason=error');
+        console.log('🔐 LOGOUT STEP 7: Force redirecting to login...');
+        window.location.replace('/login?logout=true');
       } catch (redirectError) {
-        console.error('🔐 Logout: Failed to redirect after error:', redirectError);
+        console.error('🔐 LOGOUT STEP 8: Failed to redirect after error:', redirectError);
       }
     }
   };

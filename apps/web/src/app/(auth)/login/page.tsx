@@ -20,49 +20,17 @@ function LoginForm() {
 
   // Check if user is already authenticated
   useEffect(() => {
-    const checkAuthentication = async () => {
-      try {
-        console.log('🔐 Login: Checking existing authentication...');
-        
-        // Fast synchronous check first - if no auth cookies, skip slow async check
-        const likelyAuthenticated = auth.isLikelyAuthenticated();
-        if (!likelyAuthenticated) {
-          console.log('🔐 Login: No auth cookies found, showing login form immediately');
-          setCheckingAuth(false);
-          return;
-        }
-        
-        console.log('🔐 Login: Auth cookies found, verifying session...');
-        
-        // Only do the slow async check if cookies suggest user might be authenticated
-        const result = await auth.getSession();
-        const { data, error } = result;
-        
-        if (error) {
-          console.warn('🔐 Login: Session verification failed:', error.message);
-          // Continue to show login form if session check fails
-          return;
-        }
-        
-        if (data.session) {
-          console.log('🔐 Login: User already authenticated, redirecting...');
-          // User is already authenticated, redirect to dashboard
-          const returnUrl = searchParams.get('returnUrl');
-          const redirectPath = returnUrl ? decodeURIComponent(returnUrl) : '/dashboard';
-          router.push(redirectPath);
-          return;
-        }
-        
-        console.log('🔐 Login: Session verification complete, no valid session');
-      } catch (error) {
-        console.error('🔐 Login: Error checking authentication:', error);
-        // Continue to show login form even if auth check fails
-      } finally {
-        setCheckingAuth(false);
-      }
-    };
-
-    checkAuthentication();
+    const isLogout = searchParams.get('logout') === 'true';
+    console.log('🔐 LOGIN PAGE STEP 1: useEffect triggered, isLogout:', isLogout);
+    
+    if (!isLogout) {
+      console.log('🔐 LOGIN PAGE STEP 2: Not a logout redirect, checking authentication...');
+      checkAuthentication();
+    } else {
+      console.log('🔐 LOGIN PAGE STEP 2: Logout redirect detected, skipping auth check');
+      // Skip authentication check when coming from logout
+      setCheckingAuth(false);
+    }
   }, [router, searchParams]);
 
   // Handle verification message from registration
@@ -77,6 +45,75 @@ function LoginForm() {
     }
   }, [searchParams]);
 
+  const checkAuthentication = async () => {
+    console.log('🔐 LOGIN AUTH CHECK STEP 1: Starting checkAuthentication...');
+    
+    try {
+      console.log('🔐 LOGIN AUTH CHECK STEP 2: Checking existing authentication...');
+      
+      // Fast synchronous check first - if no auth cookies, skip slow async check
+      console.log('🔐 LOGIN AUTH CHECK STEP 3: Running fast synchronous auth check...');
+      const likelyAuthenticated = auth.isLikelyAuthenticated();
+      console.log('🔐 LOGIN AUTH CHECK STEP 4: likelyAuthenticated result:', likelyAuthenticated);
+      
+      if (!likelyAuthenticated) {
+        console.log('🔐 LOGIN AUTH CHECK STEP 5: No auth cookies found, showing login form immediately');
+        setCheckingAuth(false);
+        return;
+      }
+      
+      console.log('🔐 LOGIN AUTH CHECK STEP 5: Auth cookies found, verifying session...');
+      
+      // Create a timeout promise to prevent hanging
+      console.log('🔐 LOGIN AUTH CHECK STEP 6: Creating timeout promise (5 seconds)...');
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Session verification timeout')), 5000);
+      });
+      
+      // Race the session check against timeout
+      try {
+        console.log('🔐 LOGIN AUTH CHECK STEP 7: Starting session verification race...');
+        const result = await Promise.race([
+          auth.getSession(),
+          timeoutPromise
+        ]) as any;
+        
+        console.log('🔐 LOGIN AUTH CHECK STEP 8: Session verification race completed, result:', result);
+        
+        const { data, error } = result;
+        
+        if (error) {
+          console.warn('🔐 LOGIN AUTH CHECK STEP 9: Session verification failed:', error.message);
+          // Continue to show login form if session check fails
+          return;
+        }
+        
+        if (data.session) {
+          console.log('🔐 LOGIN AUTH CHECK STEP 9: User already authenticated, redirecting...');
+          // User is already authenticated, redirect to dashboard
+          const returnUrl = searchParams.get('returnUrl');
+          const redirectPath = returnUrl ? decodeURIComponent(returnUrl) : '/dashboard';
+          console.log('🔐 LOGIN AUTH CHECK STEP 10: Redirecting to:', redirectPath);
+          router.push(redirectPath);
+          return;
+        }
+        
+        console.log('🔐 LOGIN AUTH CHECK STEP 9: Session verification complete, no valid session');
+      } catch (timeoutError) {
+        console.warn('🔐 LOGIN AUTH CHECK STEP 11: Session verification timed out or failed:', timeoutError);
+        // Show login form if verification times out
+        return;
+      }
+      
+    } catch (error) {
+      console.error('🔐 LOGIN AUTH CHECK STEP 12: Error checking authentication:', error);
+      // Continue to show login form even if auth check fails
+    } finally {
+      console.log('🔐 LOGIN AUTH CHECK STEP 13: Setting checkingAuth to false');
+      setCheckingAuth(false);
+    }
+  };
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -150,7 +187,7 @@ function LoginForm() {
           router.push(redirectPath);
         } else {
           // User might need to set up business context
-          router.push('/dashboard');
+          //router.push('/dashboard');
         }
       } else {
         setErrors({ form: 'Error inesperado al iniciar sesión' });
@@ -160,6 +197,7 @@ function LoginForm() {
       setErrors({ form: 'Error inesperado. Intenta de nuevo más tarde.' });
     } finally {
       setIsLoading(false);
+      router.push('/dashboard');
     }
   };
 
