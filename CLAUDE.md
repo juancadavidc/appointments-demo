@@ -144,6 +144,7 @@ await auth.signOut();
 - Login attempts are logged in browser console with `🔐 Auth:` prefix
 - Check `/api/debug/auth` endpoint for authentication status and cookie information
 - Verify Supabase cookies are set after login (format: `sb-<project-id>-auth-token`)
+- Logout process has comprehensive logging with step-by-step tracking for debugging issues
 
 ## Database & Multi-Tenancy
 
@@ -294,6 +295,14 @@ import { env } from '@/lib/env';
 
 **Problem**: Session not persisting across page refreshes
 **Solution**: Ensure client uses `createBrowserClient` for proper cookie management
+
+**Problem**: "Verificando autenticación..." spinner stuck after logout
+**Cause**: `supabase.auth.signOut()` hanging indefinitely, preventing logout completion
+**Solution**: 
+1. Logout process includes 2-second timeout on Supabase signOut to prevent hanging
+2. Check browser console for detailed logout step logs (`🔐 LOGOUT STEP`, `🔐 AUTH-CONTEXT STEP`, etc.)
+3. Login page includes timeout protection for authentication verification
+4. If logout hangs, emergency cleanup and redirect mechanisms are in place
 
 ### Environment Issues
 

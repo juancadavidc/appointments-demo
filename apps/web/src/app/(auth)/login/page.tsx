@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
@@ -17,20 +17,44 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  
+  // Use refs for persistent state that survives re-renders
+  const hasRedirectedRef = useRef(false);
+  const cancelledRef = useRef(false);
 
   // Check if user is already authenticated
   useEffect(() => {
+    // Reset cancellation for this effect run
+    cancelledRef.current = false;
+    
     const isLogout = searchParams.get('logout') === 'true';
-    console.log('🔐 LOGIN PAGE STEP 1: useEffect triggered, isLogout:', isLogout);
+    console.log('🔐 LOGIN PAGE STEP 1: useEffect triggered, isLogout:', isLogout, 'hasRedirected:', hasRedirectedRef.current);
+    
+    // Prevent multiple redirects
+    if (hasRedirectedRef.current) {
+      console.log('🔐 LOGIN PAGE STEP 1a: Already redirected, skipping auth check');
+      setCheckingAuth(false);
+      return;
+    }
     
     if (!isLogout) {
       console.log('🔐 LOGIN PAGE STEP 2: Not a logout redirect, checking authentication...');
-      checkAuthentication();
+      checkAuthentication().catch((error) => {
+        console.error('🔐 LOGIN PAGE: Authentication check failed:', error);
+        if (!cancelledRef.current && !hasRedirectedRef.current) {
+          setCheckingAuth(false);
+        }
+      });
     } else {
       console.log('🔐 LOGIN PAGE STEP 2: Logout redirect detected, skipping auth check');
       // Skip authentication check when coming from logout
       setCheckingAuth(false);
     }
+    
+    return () => {
+      console.log('🔐 LOGIN PAGE CLEANUP: Setting cancelled to true');
+      cancelledRef.current = true;
+    };
   }, [router, searchParams]);
 
   // Handle verification message from registration
@@ -46,7 +70,13 @@ function LoginForm() {
   }, [searchParams]);
 
   const checkAuthentication = async () => {
-    console.log('🔐 LOGIN AUTH CHECK STEP 1: Starting checkAuthentication...');
+    console.log('🔐 LOGIN AUTH CHECK STEP 1: Starting checkAuthentication, cancelled:', cancelledRef.current, 'hasRedirected:', hasRedirectedRef.current);
+    
+    // Double check - don't proceed if already redirected
+    if (hasRedirectedRef.current) {
+      console.log('🔐 LOGIN AUTH CHECK STEP 1a: hasRedirected is true, aborting');
+      return;
+    }
     
     try {
       console.log('🔐 LOGIN AUTH CHECK STEP 2: Checking existing authentication...');
@@ -58,7 +88,9 @@ function LoginForm() {
       
       if (!likelyAuthenticated) {
         console.log('🔐 LOGIN AUTH CHECK STEP 5: No auth cookies found, showing login form immediately');
-        setCheckingAuth(false);
+        if (!cancelledRef.current && !hasRedirectedRef.current) {
+          setCheckingAuth(false);
+        }
         return;
       }
       
@@ -78,6 +110,12 @@ function LoginForm() {
           timeoutPromise
         ]) as any;
         
+        // Check if cancelled after async operation
+        if (cancelledRef.current) {
+          console.log('🔐 LOGIN AUTH CHECK STEP 8: Operation cancelled after session check, aborting');
+          return;
+        }
+        
         console.log('🔐 LOGIN AUTH CHECK STEP 8: Session verification race completed, result:', result);
         
         const { data, error } = result;
@@ -88,17 +126,23 @@ function LoginForm() {
           return;
         }
         
-        if (data.session) {
-          console.log('🔐 LOGIN AUTH CHECK STEP 9: User already authenticated, redirecting...');
+        if (data.session && !cancelledRef.current && !hasRedirectedRef.current) {
+          console.log('🔐 LOGIN AUTH CHECK STEP 9: User already authenticated, setting redirect flag and redirecting...');
+          
+          // Set redirect flag BEFORE redirecting to prevent duplicate redirects
+          hasRedirectedRef.current = true;
+          
           // User is already authenticated, redirect to dashboard
           const returnUrl = searchParams.get('returnUrl');
           const redirectPath = returnUrl ? decodeURIComponent(returnUrl) : '/dashboard';
           console.log('🔐 LOGIN AUTH CHECK STEP 10: Redirecting to:', redirectPath);
-          router.push(redirectPath);
+          
+          // Use window.location for immediate redirect that bypasses React navigation
+          window.location.href = redirectPath;
           return;
         }
         
-        console.log('🔐 LOGIN AUTH CHECK STEP 9: Session verification complete, no valid session');
+        console.log('🔐 LOGIN AUTH CHECK STEP 9: Session verification complete, no valid session or already cancelled/redirected');
       } catch (timeoutError) {
         console.warn('🔐 LOGIN AUTH CHECK STEP 11: Session verification timed out or failed:', timeoutError);
         // Show login form if verification times out
@@ -109,8 +153,12 @@ function LoginForm() {
       console.error('🔐 LOGIN AUTH CHECK STEP 12: Error checking authentication:', error);
       // Continue to show login form even if auth check fails
     } finally {
-      console.log('🔐 LOGIN AUTH CHECK STEP 13: Setting checkingAuth to false');
-      setCheckingAuth(false);
+      if (!cancelledRef.current && !hasRedirectedRef.current) {
+        console.log('🔐 LOGIN AUTH CHECK STEP 13: Setting checkingAuth to false');
+        setCheckingAuth(false);
+      } else {
+        console.log('🔐 LOGIN AUTH CHECK STEP 13: Skipped setting checkingAuth to false (cancelled or redirected)');
+      }
     }
   };
   
@@ -181,14 +229,9 @@ function LoginForm() {
         const returnUrl = searchParams.get('returnUrl');
         const redirectPath = returnUrl ? decodeURIComponent(returnUrl) : '/dashboard';
         
-        // Check if user has business context
-        const businessId = auth.getCurrentBusinessId();
-        if (businessId) {
-          router.push(redirectPath);
-        } else {
-          // User might need to set up business context
-          //router.push('/dashboard');
-        }
+        // Always redirect to dashboard after successful login
+        // The business context will be handled by the dashboard page
+        router.push(redirectPath);
       } else {
         setErrors({ form: 'Error inesperado al iniciar sesión' });
       }
@@ -197,7 +240,6 @@ function LoginForm() {
       setErrors({ form: 'Error inesperado. Intenta de nuevo más tarde.' });
     } finally {
       setIsLoading(false);
-      router.push('/dashboard');
     }
   };
 
