@@ -35,7 +35,7 @@ jest.mock('@heroicons/react/24/outline', () => {
 });
 
 // Mock auth context
-jest.mock('@/lib/auth-context', () => ({
+jest.mock('@/lib/auth-provider', () => ({
   useAuth: () => ({
     user: { id: 'user-123', email: 'test@example.com' },
     signOut: jest.fn(),

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ColombianBusinessForm } from '@/components/business/registration-form';
 import { BusinessRegistrationData } from '@/components/forms/validation-schemas';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-provider';
 
 interface RegistrationState {
   isLoading: boolean;

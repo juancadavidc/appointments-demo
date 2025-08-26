@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { BusinessLayout } from './layout';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-provider';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -55,7 +55,7 @@ jest.mock('./sidebar', () => ({
 }));
 
 // Mock auth context
-jest.mock('@/lib/auth-context', () => ({
+jest.mock('@/lib/auth-provider', () => ({
   useAuth: jest.fn(),
 }));
 
