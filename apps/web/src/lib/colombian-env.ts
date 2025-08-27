@@ -270,21 +270,8 @@ export function validateColombianEnvironment(): {
  * Log Colombian environment configuration
  */
 export function logColombianEnvironment(): void {
-  const config = getColombianMarketConfig();
-  const timezoneInfo = getColombianTimezoneInfo();
-  const currentTime = getCurrentColombianTime();
   const validation = validateColombianEnvironment();
-  
-  console.log('🇨🇴 Colombian Environment Configuration:');
-  console.log(`   Timezone: ${config.timezone} (${timezoneInfo.abbreviation})`);
-  console.log(`   Currency: ${config.currency}`);
-  console.log(`   Phone Prefix: ${config.phonePrefix}`);
-  console.log(`   Locale: ${config.locale}`);
-  console.log(`   Current Time: ${formatColombianDateTime(currentTime)}`);
-  console.log(`   Business Hours: ${config.businessHours.start} - ${config.businessHours.end}`);
-  console.log(`   In Business Hours: ${isColombianBusinessHours() ? '✅' : '❌'}`);
-  console.log(`   Sample Currency: ${formatColombianCurrency(50000)}`);
-  
+
   if (validation.warnings.length > 0) {
     console.warn('⚠️  Colombian Environment Warnings:');
     validation.warnings.forEach(warning => console.warn(`   - ${warning}`));

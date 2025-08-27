@@ -53,22 +53,6 @@ const isServer = typeof window === 'undefined';
  */
 const schema = isServer ? serverEnvSchema : clientEnvSchema;
 
-// Debug: Log what we're actually trying to validate
-if (!isServer) {
-  console.log('🔍 Client-side environment debugging:');
-  console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '[EXISTS]' : '[MISSING]');
-  console.log('NEXT_PUBLIC_COLOMBIA_TIMEZONE:', process.env.NEXT_PUBLIC_COLOMBIA_TIMEZONE);
-  console.log('NEXT_PUBLIC_COLOMBIA_CURRENCY:', process.env.NEXT_PUBLIC_COLOMBIA_CURRENCY);
-  console.log('NEXT_PUBLIC_COLOMBIA_PHONE_PREFIX:', process.env.NEXT_PUBLIC_COLOMBIA_PHONE_PREFIX);
-  console.log('Object.keys(process.env) length:', Object.keys(process.env).length);
-  console.log('Manual env object:', {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '[EXISTS]' : '[MISSING]',
-    NEXT_PUBLIC_COLOMBIA_TIMEZONE: process.env.NEXT_PUBLIC_COLOMBIA_TIMEZONE,
-  });
-}
-
 // Create explicit env object for client-side because Next.js doesn't expose 
 // NEXT_PUBLIC_ variables properly in Object.keys(process.env)
 const envToValidate = isServer ? process.env : {
