@@ -46,7 +46,6 @@ describe('Business Registration Page Integration Logic', () => {
 
   // Helper function to create proper Response mocks
   const createMockResponse = (response: Record<string, unknown>, status: number, statusText: string): Response => ({
-    ...response,
     ok: status >= 200 && status < 300,
     status,
     headers: new Headers(),
@@ -62,7 +61,7 @@ describe('Business Registration Page Integration Logic', () => {
     blob: jest.fn(),
     formData: jest.fn(),
     text: jest.fn(),
-    json: jest.fn(),
+    json: response.json as jest.Mock,
   } as Response);
 
   const validBusinessData: BusinessRegistrationData = {
