@@ -78,7 +78,6 @@ interface AuthActions {
   // Internal state transitions (not exposed publicly)
   _setUnauthenticated: (error?: AuthError) => void;
   _setAuthenticated: (user: AuthUser, businessId?: string) => void;
-  _setError: (error?: AuthError | null) => void;
 }
 
 // Complete Store Type
@@ -439,11 +438,6 @@ export const useAuthStore = create<AuthStore>()(
       _setAuthenticated: (user, businessId) => {
         set({ status: 'authenticated', user, businessId: businessId || null, error: null, isLoading: false });
       },
-
-      _setError: (error) => {
-        const currentState = get();
-        set({ ...currentState, error: error || null });
-      },
     }),
     {
       name: 'auth-store', // For Redux DevTools
@@ -563,7 +557,7 @@ export const useBusinessContext = (options?: { autoSelect?: boolean; skipCache?:
   const [error, setError] = React.useState<string | null>(null);
   
   // Stabilize options to prevent infinite re-renders
-  const stableOptions = React.useMemo(() => options, [options]);
+  const stableOptions = React.useMemo(() => options, [options?.autoSelect, options?.skipCache]);
 
   React.useEffect(() => {
     let mounted = true;

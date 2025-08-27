@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, ReactNode } from 'react';
+import { useEffect, ReactNode, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuth, useBusinessContext } from '@/lib/auth-provider';
+import { useAuth } from '@/lib/auth-provider';
+import { businessContext } from '@/lib/business-context';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -18,20 +19,10 @@ export function ProtectedRoute({
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoading: authLoading } = useAuth();
-  
-  // Use async business context when business context is required
-  const businessContext = useBusinessContext({ 
-    autoSelect: requireBusinessContext 
-  });
-  
-  const businessId = requireBusinessContext ? businessContext.businessId : null;
-  const isBusinessLoading = requireBusinessContext ? businessContext.isLoading : false;
-  const businessError = requireBusinessContext ? businessContext.error : null;
+  const [isBusinessReady, setIsBusinessReady] = useState(!requireBusinessContext);
 
   useEffect(() => {
-    if (authLoading || (requireBusinessContext && isBusinessLoading)) {
-      return; // Wait for auth and business context to load
-    }
+    if (authLoading) return;
 
     if (!user) {
       // User is not authenticated, redirect to login
@@ -41,28 +32,33 @@ export function ProtectedRoute({
     }
 
     if (requireBusinessContext) {
-      if (businessError) {
-        // Handle different error types
-        if (businessError === 'TIMEOUT') {
-          console.warn('🔄 Business context loading timed out, redirecting to business registration');
-          router.push('/register/business?reason=timeout');
-        } else {
-          console.error('Business context error:', businessError);
-          router.push('/register/business?reason=error');
-        }
-        return;
-      }
-      
-      if (!businessId) {
-        // User is authenticated but no business found after auto-selection
-        router.push('/register/business?reason=no-business');
-        return;
-      }
+      businessContext
+        .getCurrentBusinessIdAsync({ autoSelect: true, userId: user.id })
+        .then(businessId => businessId 
+          ? Promise.resolve(businessId)
+          : Promise.reject(new Error('No business found'))
+        )
+        .then(businessId => {
+          console.log('✅ Business context ready:', businessId);
+          setIsBusinessReady(true);
+        })
+        .catch(error => {
+          console.log('❌ Business context failed, redirecting:', error.message);
+          
+          // Handle different error types
+          if (error.message === 'TIMEOUT') {
+            router.push('/register/business?reason=timeout');
+          } else if (error.message === 'No business found') {
+            router.push('/register/business?reason=no-business');
+          } else {
+            router.push('/register/business?reason=error');
+          }
+        });
     }
-  }, [user, authLoading, isBusinessLoading, businessId, businessError, requireBusinessContext, router, pathname, redirectTo]);
+  }, [user, authLoading, requireBusinessContext, router, pathname, redirectTo]);
 
   // Show loading state while checking authentication and business context
-  if (authLoading || (requireBusinessContext && isBusinessLoading)) {
+  if (authLoading || (requireBusinessContext && !isBusinessReady)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -70,7 +66,7 @@ export function ProtectedRoute({
           <p className="text-gray-600">
             {authLoading ? 'Verificando autenticación...' : 'Cargando contexto del negocio...'}
           </p>
-          {requireBusinessContext && isBusinessLoading && (
+          {requireBusinessContext && !isBusinessReady && (
             <p className="text-sm text-gray-400 mt-2">
               Esto solo toma unos segundos
             </p>
@@ -80,8 +76,8 @@ export function ProtectedRoute({
     );
   }
 
-  // Don't render children if user is not authenticated or missing required context
-  if (!user || (requireBusinessContext && !businessId)) {
+  // Don't render children if user is not authenticated or business context not ready
+  if (!user || (requireBusinessContext && !isBusinessReady)) {
     return null;
   }
 

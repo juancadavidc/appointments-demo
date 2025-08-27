@@ -28,10 +28,14 @@ export default function BusinessDashboardPage() {
 
   useEffect(() => {
     // Wait for business context to load
-    if (isBusinessLoading) return;
+    if (isBusinessLoading) {
+      console.log('🔐 BusinessDashboardPage: Business context is loading');
+      return;
+    }
     
     // Handle business context errors
     if (businessError) {
+      console.log('🔐 BusinessDashboardPage: Business context error', businessError);
       setError(`Error al cargar el contexto del negocio: ${businessError}`);
       setIsLoading(false);
       return;
@@ -39,19 +43,22 @@ export default function BusinessDashboardPage() {
     
     // Handle business setup flow
     if (setupMode && !businessId) {
+      console.log('🔐 BusinessDashboardPage: Redirecting to business registration page');
       // Redirect to dedicated business registration page for better UX
       router.push('/register/business');
       return;
     }
 
     if (businessId) {
+      console.log('🔐 BusinessDashboardPage: Business ID found, fetching business profile');
       fetchBusinessProfile();
     } else {
+      console.log('🔐 BusinessDashboardPage: No business ID found, setting error');
       // No business found after auto-selection attempt
       setError('No se encontró ningún negocio asociado a tu cuenta');
       setIsLoading(false);
     }
-  }, [businessId, isBusinessLoading, businessError, setupMode, router]);
+  }, [isBusinessLoading, businessError, setupMode, router, businessId]);
 
   const fetchBusinessProfile = async () => {
     try {
