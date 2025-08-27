@@ -177,7 +177,7 @@ export const auth = {
         return { error: null };
       }
       
-      const { error } = result;
+      const { error } = result as { error: { message: string; status?: number } | null };
       
       if (error) {
         console.warn('🔐 AUTH-SIGNOUT STEP 5: supabase.auth.signOut error:', error);

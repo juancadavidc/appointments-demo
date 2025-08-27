@@ -47,6 +47,8 @@ describe('Business Registration Page Integration Logic', () => {
   // Helper function to create proper Response mocks
   const createMockResponse = (response: Record<string, unknown>, status: number, statusText: string): Response => ({
     ...response,
+    ok: status >= 200 && status < 300,
+    status,
     headers: new Headers(),
     redirected: false,
     statusText,
@@ -54,11 +56,13 @@ describe('Business Registration Page Integration Logic', () => {
     url: 'http://localhost:3000/api/business/register',
     body: null,
     bodyUsed: false,
+    bytes: jest.fn(),
     clone: jest.fn(),
     arrayBuffer: jest.fn(),
     blob: jest.fn(),
     formData: jest.fn(),
     text: jest.fn(),
+    json: jest.fn(),
   } as Response);
 
   const validBusinessData: BusinessRegistrationData = {

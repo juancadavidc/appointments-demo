@@ -126,9 +126,14 @@ describe('Logout Functionality and Session Cleanup', () => {
   const mockSession = {
     access_token: 'mock-jwt-token',
     refresh_token: 'mock-refresh-token',
+    token_type: 'bearer',
+    expires_in: 3600,
     user: {
       id: mockUserId,
       email: 'test@example.com',
+      aud: 'authenticated',
+      created_at: '2023-01-01T00:00:00Z',
+      app_metadata: { provider: 'email' },
       user_metadata: { business_id: mockBusinessId },
     },
   };
@@ -282,7 +287,7 @@ describe('Logout Functionality and Session Cleanup', () => {
       const mockAuth = auth as jest.Mocked<typeof auth>;
       mockAuth.signOut.mockResolvedValue({ error: null });
       mockAuth.getSession
-        .mockResolvedValueOnce({ data: { session: mockSession as { user: { id: string } } }, error: null }) // Before logout
+        .mockResolvedValueOnce({ data: { session: mockSession }, error: null }) // Before logout
         .mockResolvedValueOnce({ data: { session: null }, error: null }); // After logout
 
       // Before logout - should have session
@@ -385,7 +390,7 @@ describe('Logout Functionality and Session Cleanup', () => {
       mockOnAuthStateChange.mockImplementation((callback) => {
         // Simulate auth state change to null (logout)
         callback(null);
-        return { data: { subscription: { unsubscribe: jest.fn() } } };
+        return { data: { subscription: { id: 'mock-subscription', callback: jest.fn(), unsubscribe: jest.fn() } } };
       });
 
       auth.onAuthStateChange(mockCallback);
@@ -415,7 +420,7 @@ describe('Logout Functionality and Session Cleanup', () => {
           businessId: mockBusinessId,
         };
         callback(authUser);
-        return { data: { subscription: { unsubscribe: jest.fn() } } };
+        return { data: { subscription: { id: 'mock-subscription', callback: jest.fn(), unsubscribe: jest.fn() } } };
       });
 
       const listener = auth.onAuthStateChange(mockCallback);

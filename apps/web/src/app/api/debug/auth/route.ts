@@ -134,7 +134,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const requestData = await request.json();
     
     // Get the same debug info as GET
-    const getResponse = await GET(request);
+    const getResponse = await GET();
     const debugInfo = await getResponse.json();
 
     return NextResponse.json({

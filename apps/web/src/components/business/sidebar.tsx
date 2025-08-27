@@ -58,6 +58,7 @@ export function BusinessSidebar({ isOpen, onClose }: BusinessSidebarProps) {
         setIsLoggingOut(false);
       } 
     } catch (error) {
+      console.error('🔐 Logout error:', error);
       setLogoutError('Error inesperado durante el cierre de sesión');
       setIsLoggingOut(false);
       window.location.replace('/login?logout=true');
