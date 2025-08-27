@@ -18,7 +18,7 @@ const customJestConfig = {
     '<rootDir>/node_modules/',
     // Temporarily ignore failing tests
     '.*auth-context\\.test\\.tsx$',
-    '.*env\\.test\\.ts$',
+    '.*env\\.test\\.ts$', // Re-disabled - has its own env setup that conflicts with global setup
     '.*dashboard/page\\.test\\.tsx$',
     '.*\\(auth\\)/register/page\\.test\\.tsx$',
     '.*ProtectedRoute\\.test\\.tsx$',

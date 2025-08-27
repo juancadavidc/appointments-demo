@@ -7,6 +7,7 @@ import {
   validatePassword,
   extractValidationErrors
 } from './validation-schemas';
+import { z } from 'zod';
 
 describe('Authentication Validation Schemas', () => {
   describe('EmailSchema', () => {
@@ -155,9 +156,8 @@ describe('Authentication Validation Schemas', () => {
             confirmPassword: 'different'
           });
         } catch (error: unknown) {
-          if (error instanceof Error && 'issues' in error) {
-            const zodError = error as any; // ZodError type compatibility
-            const errors = extractValidationErrors(zodError);
+          if (error instanceof z.ZodError) {
+            const errors = extractValidationErrors(error);
             expect(errors).toHaveProperty('email');
             expect(errors).toHaveProperty('password');
             expect(typeof errors.email).toBe('string');
@@ -200,9 +200,8 @@ describe('Authentication Validation Schemas', () => {
           confirmPassword: 'Different123!'
         });
       } catch (error: unknown) {
-        if (error instanceof Error && 'issues' in error) {
-          const zodError = error as any; // ZodError type compatibility
-          const errors = extractValidationErrors(zodError);
+        if (error instanceof z.ZodError) {
+          const errors = extractValidationErrors(error);
           expect(errors.confirmPassword).toContain('contraseñas no coinciden');
         }
       }

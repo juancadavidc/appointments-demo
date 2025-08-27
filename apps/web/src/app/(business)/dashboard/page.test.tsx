@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import BusinessDashboardPage from './page';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-provider';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -10,7 +10,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock auth context
-jest.mock('@/lib/auth-context', () => ({
+jest.mock('@/lib/auth-provider', () => ({
   useAuth: jest.fn(),
 }));
 
@@ -46,6 +46,7 @@ describe('BusinessDashboardPage', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -70,6 +71,7 @@ describe('BusinessDashboardPage', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -94,6 +96,7 @@ describe('BusinessDashboardPage', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -118,6 +121,7 @@ describe('BusinessDashboardPage', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),

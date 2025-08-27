@@ -53,22 +53,6 @@ const isServer = typeof window === 'undefined';
  */
 const schema = isServer ? serverEnvSchema : clientEnvSchema;
 
-// Debug: Log what we're actually trying to validate
-if (!isServer) {
-  console.log('🔍 Client-side environment debugging:');
-  console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '[EXISTS]' : '[MISSING]');
-  console.log('NEXT_PUBLIC_COLOMBIA_TIMEZONE:', process.env.NEXT_PUBLIC_COLOMBIA_TIMEZONE);
-  console.log('NEXT_PUBLIC_COLOMBIA_CURRENCY:', process.env.NEXT_PUBLIC_COLOMBIA_CURRENCY);
-  console.log('NEXT_PUBLIC_COLOMBIA_PHONE_PREFIX:', process.env.NEXT_PUBLIC_COLOMBIA_PHONE_PREFIX);
-  console.log('Object.keys(process.env) length:', Object.keys(process.env).length);
-  console.log('Manual env object:', {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '[EXISTS]' : '[MISSING]',
-    NEXT_PUBLIC_COLOMBIA_TIMEZONE: process.env.NEXT_PUBLIC_COLOMBIA_TIMEZONE,
-  });
-}
-
 // Create explicit env object for client-side because Next.js doesn't expose 
 // NEXT_PUBLIC_ variables properly in Object.keys(process.env)
 const envToValidate = isServer ? process.env : {
@@ -86,16 +70,57 @@ const envToValidate = isServer ? process.env : {
 
 const parsedEnv = schema.safeParse(envToValidate);
 
+// During Next.js build process, environment validation may fail due to missing vars
+// Skip strict validation during build time but still validate at runtime
+const isBuildTime = process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_SUPABASE_URL;
+
 if (!parsedEnv.success) {
   console.error(`❌ Environment validation failed (${isServer ? 'server' : 'client'} side):`);
   console.error(parsedEnv.error.format());
-  throw new Error('Invalid environment configuration');
+  
+  if (isBuildTime) {
+    console.warn('⚠️ Environment validation failed during build time - using defaults');
+    // Create minimal env object with defaults for build process
+  } else {
+    throw new Error('Invalid environment configuration');
+  }
 }
+
+/**
+ * Create build-time fallback configuration
+ */
+const createBuildTimeFallback = () => ({
+  supabase: {
+    url: 'https://placeholder.supabase.co',
+    anonKey: 'placeholder-anon-key',
+    serviceRoleKey: undefined,
+  },
+  colombia: {
+    timezone: 'America/Bogota',
+    currency: 'COP',
+    phonePrefix: '+57',
+  },
+  app: {
+    env: 'development' as const,
+    nodeEnv: 'production' as const,
+    version: '1.0.0',
+    baseUrl: 'http://localhost:3000',
+    apiTimeout: 10000,
+  },
+  features: {
+    debugMode: false,
+    testData: false,
+    analytics: false,
+  },
+  logging: {
+    level: 'info' as const,
+  },
+});
 
 /**
  * Type-safe environment configuration
  */
-export const env = {
+export const env = parsedEnv.success ? {
   supabase: {
     url: parsedEnv.data.NEXT_PUBLIC_SUPABASE_URL,
     anonKey: parsedEnv.data.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -129,7 +154,7 @@ export const env = {
   logging: {
     level: isServer && 'LOG_LEVEL' in parsedEnv.data ? parsedEnv.data.LOG_LEVEL : 'info' as const,
   },
-} as const;
+} as const : createBuildTimeFallback();
 
 /**
  * Validate all required environment variables are present

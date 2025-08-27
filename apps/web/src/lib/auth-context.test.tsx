@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { AuthProvider, useAuth, useRequireAuth, useRequireBusinessContext } from './auth-context';
+import { AuthProvider, useAuth, useRequireAuth, useRequireBusinessContext } from './auth-provider';
 import { auth, businessContext } from './auth';
 
 // Mock auth module

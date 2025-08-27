@@ -204,7 +204,7 @@ export function BusinessSettingsPanel({ settings, onSave }: BusinessSettingsPane
               {hour.isOpen ? (
                 <>
                   <div className="col-span-4">
-                    <label className="sr-only">Hora de apertura {DAY_NAMES[hour.dayOfWeek]}</label>
+                    <label className="sr-only">Hora de apertura para el día {index}</label>
                     <input
                       type="time"
                       value={hour.openTime}
@@ -218,7 +218,7 @@ export function BusinessSettingsPanel({ settings, onSave }: BusinessSettingsPane
                     a
                   </div>
                   <div className="col-span-4">
-                    <label className="sr-only">Hora de cierre {DAY_NAMES[hour.dayOfWeek]}</label>
+                    <label className="sr-only">Hora de cierre para el día {index}</label>
                     <input
                       type="time"
                       value={hour.closeTime}

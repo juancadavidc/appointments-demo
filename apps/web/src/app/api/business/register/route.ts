@@ -54,7 +54,7 @@ const createServerClientFromRequest = async () => {
           console.log('🍪 getAll() called, returning cookies:', cookies.map(c => c.name));
           return cookies;
         },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
           console.log('🍪 setAll() called with cookies:', cookiesToSet.map(c => c.name));
           try {
             cookiesToSet.forEach(({ name, value, options }) => {

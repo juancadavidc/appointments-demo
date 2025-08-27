@@ -16,7 +16,7 @@ const createServerClientFromRequest = async () => {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
@@ -41,7 +41,7 @@ const createServerClientFromRequest = async () => {
  * - Authentication state
  * - Session information
  */
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll();
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const requestData = await request.json();
     
     // Get the same debug info as GET
-    const getResponse = await GET(request);
+    const getResponse = await GET();
     const debugInfo = await getResponse.json();
 
     return NextResponse.json({

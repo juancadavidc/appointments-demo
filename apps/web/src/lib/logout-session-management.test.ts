@@ -3,7 +3,6 @@
  * Tests complete session cleanup, business context clearing, and authentication state management
  */
 
-import { supabase } from './supabase';
 import { 
   clearBusinessContext, 
   setBusinessContext, 
@@ -85,7 +84,7 @@ const enhancedLocalStorageMock = {
   ...localStorageMock,
   length: 0,
   key: jest.fn((index: number) => {
-    const keys = Object.keys((localStorageMock as any).store || {});
+    const keys = Object.keys((localStorageMock as { store?: Record<string, string> }).store || {});
     return keys[index] || null;
   }),
 } as Storage;
@@ -127,9 +126,14 @@ describe('Logout Functionality and Session Cleanup', () => {
   const mockSession = {
     access_token: 'mock-jwt-token',
     refresh_token: 'mock-refresh-token',
+    token_type: 'bearer',
+    expires_in: 3600,
     user: {
       id: mockUserId,
       email: 'test@example.com',
+      aud: 'authenticated',
+      created_at: '2023-01-01T00:00:00Z',
+      app_metadata: { provider: 'email' },
       user_metadata: { business_id: mockBusinessId },
     },
   };
@@ -283,7 +287,7 @@ describe('Logout Functionality and Session Cleanup', () => {
       const mockAuth = auth as jest.Mocked<typeof auth>;
       mockAuth.signOut.mockResolvedValue({ error: null });
       mockAuth.getSession
-        .mockResolvedValueOnce({ data: { session: mockSession as any }, error: null }) // Before logout
+        .mockResolvedValueOnce({ data: { session: mockSession }, error: null }) // Before logout
         .mockResolvedValueOnce({ data: { session: null }, error: null }); // After logout
 
       // Before logout - should have session
@@ -379,7 +383,6 @@ describe('Logout Functionality and Session Cleanup', () => {
     test('should clear business context when auth state changes to null', async () => {
       localStorageMock.setItem('current_business_id', mockBusinessId);
       
-      const mockSupabase = supabase as jest.Mocked<typeof supabase>;
       const mockCallback = jest.fn();
       
       // Mock auth state change listener
@@ -387,7 +390,7 @@ describe('Logout Functionality and Session Cleanup', () => {
       mockOnAuthStateChange.mockImplementation((callback) => {
         // Simulate auth state change to null (logout)
         callback(null);
-        return { data: { subscription: { unsubscribe: jest.fn() } as any } } as any;
+        return { data: { subscription: { id: 'mock-subscription', callback: jest.fn(), unsubscribe: jest.fn() } } };
       });
 
       auth.onAuthStateChange(mockCallback);
@@ -398,7 +401,6 @@ describe('Logout Functionality and Session Cleanup', () => {
     });
 
     test('should restore business context when auth state changes to valid user', async () => {
-      const mockSupabase = supabase as jest.Mocked<typeof supabase>;
       const mockCallback = jest.fn();
       const mockSetBusinessContext = setBusinessContext as jest.MockedFunction<typeof setBusinessContext>;
       const mockGetBusinessContext = getBusinessContext as jest.MockedFunction<typeof getBusinessContext>;
@@ -418,7 +420,7 @@ describe('Logout Functionality and Session Cleanup', () => {
           businessId: mockBusinessId,
         };
         callback(authUser);
-        return { data: { subscription: { unsubscribe: jest.fn() } as any } } as any;
+        return { data: { subscription: { id: 'mock-subscription', callback: jest.fn(), unsubscribe: jest.fn() } } };
       });
 
       const listener = auth.onAuthStateChange(mockCallback);

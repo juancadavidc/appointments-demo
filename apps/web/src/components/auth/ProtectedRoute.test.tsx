@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ProtectedRoute } from './ProtectedRoute';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-provider';
 
 // Mock Next.js router and pathname
 jest.mock('next/navigation', () => ({
@@ -11,7 +11,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock auth context
-jest.mock('@/lib/auth-context', () => ({
+jest.mock('@/lib/auth-provider', () => ({
   useAuth: jest.fn(),
 }));
 
@@ -40,6 +40,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue(null),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -67,6 +68,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue('business-123'),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -93,6 +95,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue(null),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -123,6 +126,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue(null),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -151,6 +155,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue(null),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -181,6 +186,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue('business-123'),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -207,6 +213,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue(null),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -234,6 +241,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue(null),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -269,6 +277,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue(null),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -291,6 +300,7 @@ describe('ProtectedRoute', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: jest.fn().mockReturnValue('business-123'),
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),

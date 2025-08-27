@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
+import { useBusinessContext } from '@/lib/auth-provider';
 import { BusinessProfileCard } from '@/components/business/business-profile-card';
 import { BusinessProfileEditForm } from '@/components/business/business-profile-edit-form';
 import { BusinessSettingsPanel } from '@/components/business/business-settings-panel';
@@ -10,32 +10,60 @@ import type { Business, BusinessSettings } from '@appointments-demo/types';
 
 // Disable static optimization for this page since it requires client-side auth
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
-export default function BusinessDashboardPage() {
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { getCurrentBusinessId } = useAuth();
+  
+  // Use new async business context hook with auto-selection
+  const { businessId, isLoading: isBusinessLoading, error: businessError } = useBusinessContext({ autoSelect: true });
+  
   const [business, setBusiness] = useState<Business | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [setupMode, setSetupMode] = useState(false);
 
-  const businessId = getCurrentBusinessId();
-  const setupMode = searchParams.get('setup') === 'business';
+  // Handle search params client-side only
+  useEffect(() => {
+    setSetupMode(searchParams.get('setup') === 'business');
+  }, [searchParams]);
 
   useEffect(() => {
+    // Wait for business context to load
+    if (isBusinessLoading) {
+      console.log('🔐 BusinessDashboardPage: Business context is loading');
+      return;
+    }
+    
+    // Handle business context errors
+    if (businessError) {
+      console.log('🔐 BusinessDashboardPage: Business context error', businessError);
+      setError(`Error al cargar el contexto del negocio: ${businessError}`);
+      setIsLoading(false);
+      return;
+    }
+    
     // Handle business setup flow
     if (setupMode && !businessId) {
+      console.log('🔐 BusinessDashboardPage: Redirecting to business registration page');
       // Redirect to dedicated business registration page for better UX
       router.push('/register/business');
       return;
     }
 
     if (businessId) {
+      console.log('🔐 BusinessDashboardPage: Business ID found, fetching business profile');
       fetchBusinessProfile();
+    } else {
+      console.log('🔐 BusinessDashboardPage: No business ID found, setting error');
+      // No business found after auto-selection attempt
+      setError('No se encontró ningún negocio asociado a tu cuenta');
+      setIsLoading(false);
     }
-  }, [businessId, setupMode, router]);
+  }, [isBusinessLoading, businessError, setupMode, router, businessId]);
 
   const fetchBusinessProfile = async () => {
     try {
@@ -114,7 +142,7 @@ export default function BusinessDashboardPage() {
     }
   };
 
-  if (isLoading) {
+  if (isBusinessLoading || isLoading) {
     return (
       <div className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -303,5 +331,26 @@ export default function BusinessDashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BusinessDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/6 mb-8"></div>
+            <div className="bg-white shadow rounded-lg p-6">
+              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

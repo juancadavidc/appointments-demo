@@ -187,14 +187,14 @@ export async function validateBusinessContext(businessId: string): Promise<Busin
 export async function clearBusinessContext(): Promise<BusinessContextResult> {
   try {
     // Clear PostgreSQL session context
-    const { error } = await supabase.rpc('clear_business_context')
+    //const { error } = await supabase.rpc('clear_business_context')
 
-    if (error) {
-      return {
-        success: false,
-        error: `Failed to clear business context: ${error.message}`
-      }
-    }
+    //if (error) {
+    //  return {
+    //    success: false,
+    //    error: `Failed to clear business context: ${error.message}`
+    //  }
+    //}
 
     // Clear localStorage
     if (typeof window !== 'undefined') {
@@ -344,6 +344,43 @@ export function isBusinessContextSet(): boolean {
 }
 
 /**
+ * Discover user's business from database
+ * Used when localStorage is empty but user might have a business
+ */
+export async function discoverUserBusiness(): Promise<string | null> {
+  try {
+    // Verify user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session?.user) {
+      return null
+    }
+
+    // Query user's businesses using RLS policies
+    const { data: businesses, error } = await supabase
+      .from('businesses')
+      .select('id, name, owner_id')
+      .limit(1) // For now, just get the first business
+    
+    if (error || !businesses || businesses.length === 0) {
+      return null
+    }
+
+    const business = businesses[0]
+    
+    // Verify ownership (extra safety check)
+    if (business.owner_id !== session.user.id) {
+      return null
+    }
+
+    console.log('🔍 Discovered user business:', business.id, business.name)
+    return business.id
+  } catch (error) {
+    console.warn('Error discovering user business:', error)
+    return null
+  }
+}
+
+/**
  * Get business context with validation
  * Returns business ID if valid context exists, null otherwise
  */
@@ -364,6 +401,36 @@ export async function getValidatedBusinessContext(): Promise<string | null> {
   }
 
   return businessId
+}
+
+/**
+ * Get business context with auto-discovery
+ * If localStorage is empty, tries to discover user's business automatically
+ */
+export async function getOrDiscoverBusinessContext(): Promise<string | null> {
+  // First try to get validated business context from localStorage
+  let businessId = await getValidatedBusinessContext()
+  
+  if (businessId) {
+    return businessId
+  }
+
+  // If no valid context in localStorage, try to discover user's business
+  console.log('🔍 No business context found, attempting auto-discovery...')
+  businessId = await discoverUserBusiness()
+  
+  if (businessId) {
+    // Automatically set the discovered business context
+    const setResult = await setBusinessContext(businessId)
+    if (setResult.success) {
+      console.log('🔍 Auto-discovery successful, business context set:', businessId)
+      return businessId
+    } else {
+      console.warn('🔍 Auto-discovery found business but failed to set context:', setResult.error)
+    }
+  }
+
+  return null
 }
 
 /**

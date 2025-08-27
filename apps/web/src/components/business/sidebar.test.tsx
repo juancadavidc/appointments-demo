@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { BusinessSidebar } from './sidebar';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-provider';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -38,11 +38,12 @@ jest.mock('@heroicons/react/24/outline', () => {
     UsersIcon: MockIcon,
     XMarkIcon: MockIcon,
     Bars3Icon: MockIcon,
+    ExclamationTriangleIcon: MockIcon,
   };
 });
 
 // Mock auth context
-jest.mock('@/lib/auth-context', () => ({
+jest.mock('@/lib/auth-provider', () => ({
   useAuth: jest.fn(),
 }));
 
@@ -69,6 +70,7 @@ describe('BusinessSidebar', () => {
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -141,8 +143,8 @@ describe('BusinessSidebar', () => {
     expect(screen.getByText('Cerrar Sesión')).toBeInTheDocument();
   });
 
-  it('handles sign out functionality', () => {
-    const mockSignOut = jest.fn();
+  it('shows logout confirmation dialog when sign out is clicked', () => {
+    const mockEnhancedSignOut = jest.fn();
     mockGetCurrentBusinessId.mockReturnValue('business-123');
     mockUsePathname.mockReturnValue('/dashboard');
     
@@ -152,11 +154,12 @@ describe('BusinessSidebar', () => {
       isInitialized: true,
       signIn: jest.fn(),
       signUp: jest.fn(),
-      signOut: mockSignOut,
-      enhancedSignOut: jest.fn(),
+      signOut: jest.fn(),
+      enhancedSignOut: mockEnhancedSignOut,
       refreshSession: jest.fn(),
       setBusinessContext: jest.fn(),
       getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
       initializeSessionTimeout: jest.fn(),
       resetSessionTimeout: jest.fn(),
       stopSessionTimeout: jest.fn(),
@@ -167,7 +170,218 @@ describe('BusinessSidebar', () => {
     const signOutButton = screen.getByRole('button', { name: /cerrar sesión/i });
     fireEvent.click(signOutButton);
 
-    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    // Should show confirmation dialog
+    expect(screen.getByText(/¿Estás seguro de que deseas cerrar sesión?/)).toBeInTheDocument();
+    expect(screen.getByText('Cancelar')).toBeInTheDocument();
+    expect(screen.getByText('Sí, Cerrar Sesión')).toBeInTheDocument();
+    
+    // Should not call enhancedSignOut yet
+    expect(mockEnhancedSignOut).not.toHaveBeenCalled();
+  });
+
+  it('cancels logout when cancel button is clicked', () => {
+    const mockEnhancedSignOut = jest.fn();
+    mockGetCurrentBusinessId.mockReturnValue('business-123');
+    mockUsePathname.mockReturnValue('/dashboard');
+    
+    mockUseAuth.mockReturnValue({
+      user: { id: 'user-123', email: 'test@example.com' },
+      isLoading: false,
+      isInitialized: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+      enhancedSignOut: mockEnhancedSignOut,
+      refreshSession: jest.fn(),
+      setBusinessContext: jest.fn(),
+      getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
+      initializeSessionTimeout: jest.fn(),
+      resetSessionTimeout: jest.fn(),
+      stopSessionTimeout: jest.fn(),
+    });
+
+    render(<BusinessSidebar isOpen={true} onClose={jest.fn()} />);
+
+    // Click sign out button
+    const signOutButton = screen.getByRole('button', { name: /cerrar sesión/i });
+    fireEvent.click(signOutButton);
+
+    // Click cancel button
+    const cancelButton = screen.getByText('Cancelar');
+    fireEvent.click(cancelButton);
+
+    // Dialog should be gone
+    expect(screen.queryByText(/¿Estás seguro de que deseas cerrar sesión?/)).not.toBeInTheDocument();
+    
+    // Should not call enhancedSignOut
+    expect(mockEnhancedSignOut).not.toHaveBeenCalled();
+  });
+
+  it('calls enhancedSignOut when logout is confirmed', async () => {
+    const mockEnhancedSignOut = jest.fn().mockResolvedValue({ error: null });
+    mockGetCurrentBusinessId.mockReturnValue('business-123');
+    mockUsePathname.mockReturnValue('/dashboard');
+    
+    mockUseAuth.mockReturnValue({
+      user: { id: 'user-123', email: 'test@example.com' },
+      isLoading: false,
+      isInitialized: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+      enhancedSignOut: mockEnhancedSignOut,
+      refreshSession: jest.fn(),
+      setBusinessContext: jest.fn(),
+      getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
+      initializeSessionTimeout: jest.fn(),
+      resetSessionTimeout: jest.fn(),
+      stopSessionTimeout: jest.fn(),
+    });
+
+    render(<BusinessSidebar isOpen={true} onClose={jest.fn()} />);
+
+    // Click sign out button
+    const signOutButton = screen.getByRole('button', { name: /cerrar sesión/i });
+    fireEvent.click(signOutButton);
+
+    // Click confirm button
+    const confirmButton = screen.getByText('Sí, Cerrar Sesión');
+    fireEvent.click(confirmButton);
+
+    // Should call enhancedSignOut with correct config
+    expect(mockEnhancedSignOut).toHaveBeenCalledWith({
+      clearBusinessContext: true,
+      clearLocalStorage: true,
+      redirectToLogin: true,
+      redirectUrl: '/login?logout=true'
+    });
+  });
+
+  it('shows loading state during logout', async () => {
+    const mockEnhancedSignOut = jest.fn().mockImplementation(() => 
+      new Promise(resolve => setTimeout(() => resolve({ error: null }), 100))
+    );
+    mockGetCurrentBusinessId.mockReturnValue('business-123');
+    mockUsePathname.mockReturnValue('/dashboard');
+    
+    mockUseAuth.mockReturnValue({
+      user: { id: 'user-123', email: 'test@example.com' },
+      isLoading: false,
+      isInitialized: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+      enhancedSignOut: mockEnhancedSignOut,
+      refreshSession: jest.fn(),
+      setBusinessContext: jest.fn(),
+      getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
+      initializeSessionTimeout: jest.fn(),
+      resetSessionTimeout: jest.fn(),
+      stopSessionTimeout: jest.fn(),
+    });
+
+    render(<BusinessSidebar isOpen={true} onClose={jest.fn()} />);
+
+    // Initial state
+    expect(screen.getByText('Cerrar Sesión')).toBeInTheDocument();
+
+    // Click sign out and confirm
+    const signOutButton = screen.getByRole('button', { name: /cerrar sesión/i });
+    fireEvent.click(signOutButton);
+    
+    const confirmButton = screen.getByText('Sí, Cerrar Sesión');
+    fireEvent.click(confirmButton);
+
+    // Should show loading state
+    expect(screen.getByText('Cerrando Sesión...')).toBeInTheDocument();
+    expect(signOutButton).toBeDisabled();
+  });
+
+  it('shows error toast when logout fails', async () => {
+    const mockEnhancedSignOut = jest.fn().mockResolvedValue({ 
+      error: { message: 'Network error' } 
+    });
+    mockGetCurrentBusinessId.mockReturnValue('business-123');
+    mockUsePathname.mockReturnValue('/dashboard');
+    
+    mockUseAuth.mockReturnValue({
+      user: { id: 'user-123', email: 'test@example.com' },
+      isLoading: false,
+      isInitialized: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+      enhancedSignOut: mockEnhancedSignOut,
+      refreshSession: jest.fn(),
+      setBusinessContext: jest.fn(),
+      getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
+      initializeSessionTimeout: jest.fn(),
+      resetSessionTimeout: jest.fn(),
+      stopSessionTimeout: jest.fn(),
+    });
+
+    render(<BusinessSidebar isOpen={true} onClose={jest.fn()} />);
+
+    // Click sign out and confirm
+    const signOutButton = screen.getByRole('button', { name: /cerrar sesión/i });
+    fireEvent.click(signOutButton);
+    
+    const confirmButton = screen.getByText('Sí, Cerrar Sesión');
+    fireEvent.click(confirmButton);
+
+    // Wait for error to show
+    await screen.findByText('Network error');
+    
+    // Should show error toast
+    expect(screen.getByText('Network error')).toBeInTheDocument();
+  });
+
+  it('dismisses error toast when X is clicked', async () => {
+    const mockEnhancedSignOut = jest.fn().mockResolvedValue({ 
+      error: { message: 'Network error' } 
+    });
+    mockGetCurrentBusinessId.mockReturnValue('business-123');
+    mockUsePathname.mockReturnValue('/dashboard');
+    
+    mockUseAuth.mockReturnValue({
+      user: { id: 'user-123', email: 'test@example.com' },
+      isLoading: false,
+      isInitialized: true,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+      enhancedSignOut: mockEnhancedSignOut,
+      refreshSession: jest.fn(),
+      setBusinessContext: jest.fn(),
+      getCurrentBusinessId: mockGetCurrentBusinessId,
+      getCurrentBusinessIdAsync: jest.fn(),
+      initializeSessionTimeout: jest.fn(),
+      resetSessionTimeout: jest.fn(),
+      stopSessionTimeout: jest.fn(),
+    });
+
+    render(<BusinessSidebar isOpen={true} onClose={jest.fn()} />);
+
+    // Trigger error
+    const signOutButton = screen.getByRole('button', { name: /cerrar sesión/i });
+    fireEvent.click(signOutButton);
+    
+    const confirmButton = screen.getByText('Sí, Cerrar Sesión');
+    fireEvent.click(confirmButton);
+
+    // Wait for error to show
+    await screen.findByText('Network error');
+    
+    // Click dismiss button
+    const dismissButton = screen.getByRole('button', { name: '' });
+    fireEvent.click(dismissButton);
+
+    // Error should be gone
+    expect(screen.queryByText('Network error')).not.toBeInTheDocument();
   });
 
   it('has correct navigation hrefs', () => {

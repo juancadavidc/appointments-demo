@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
 import RegisterPage from './page';
 import { auth } from '@/lib/auth';
+import type { User, Session } from '@supabase/supabase-js';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -239,7 +240,7 @@ describe('RegisterPage', () => {
 
   it('shows loading state during registration', async () => {
     const user = userEvent.setup();
-    let resolveSignUp: (value: any) => void;
+    let resolveSignUp: (value: { data: { user: User | null; session: Session | null }; error: null } | { data: { user: null; session: null }; error: { message: string } }) => void;
     mockAuth.signUp.mockImplementation(() => 
       new Promise(resolve => {
         resolveSignUp = resolve;
@@ -266,6 +267,7 @@ describe('RegisterPage', () => {
       data: {
         user: {
           id: 'user-123',
+          email: 'test@example.com',
           aud: 'authenticated',
           created_at: '2023-01-01T00:00:00Z',
           app_metadata: { provider: 'email' },
@@ -276,6 +278,7 @@ describe('RegisterPage', () => {
           token_type: 'bearer',
           user: {
             id: 'user-123',
+            email: 'test@example.com',
             aud: 'authenticated',
             created_at: '2023-01-01T00:00:00Z',
             app_metadata: { provider: 'email' },

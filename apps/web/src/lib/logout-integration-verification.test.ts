@@ -124,9 +124,14 @@ describe('Complete Authentication Cleanup and Verification', () => {
   const mockSession = {
     access_token: 'mock-jwt-token',
     refresh_token: 'mock-refresh-token',
+    token_type: 'bearer',
+    expires_in: 3600,
     user: {
       id: mockUserId,
       email: 'test@example.com',
+      aud: 'authenticated',
+      created_at: '2023-01-01T00:00:00Z',
+      app_metadata: { provider: 'email' },
       user_metadata: { business_id: mockBusinessId },
     },
   };
@@ -252,7 +257,7 @@ describe('Complete Authentication Cleanup and Verification', () => {
       
       // Mock incomplete cleanup
       (mockSupabase.auth.getSession as jest.MockedFunction<typeof mockSupabase.auth.getSession>).mockResolvedValue({ 
-        data: { session: mockSession as any }, 
+        data: { session: mockSession }, 
         error: null 
       });
       mockGetBusinessContext.mockReturnValue(mockBusinessId);
