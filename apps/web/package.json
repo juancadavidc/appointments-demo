@@ -22,7 +22,7 @@
     "@appointments-demo/utils": "file:../../packages/utils",
     "@heroicons/react": "^2.2.0",
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.55.0",
+    "@supabase/supabase-js": "^2.56.0",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^15.0.7",
     "@types/jest": "^30.0.0",
