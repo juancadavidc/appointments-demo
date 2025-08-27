@@ -2,6 +2,24 @@
  * @jest-environment jsdom
  */
 
+// Set up environment variables before any imports
+const originalEnv = process.env;
+
+// Set required environment variables
+process.env = {
+  ...originalEnv,
+  NEXT_PUBLIC_SUPABASE_URL: 'https://test-project.supabase.co',
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key-12345',
+  NEXT_PUBLIC_COLOMBIA_TIMEZONE: 'America/Bogota',
+  NEXT_PUBLIC_COLOMBIA_CURRENCY: 'COP',
+  NEXT_PUBLIC_COLOMBIA_PHONE_PREFIX: '+57',
+  NODE_ENV: 'test',
+  NEXT_PUBLIC_APP_ENV: 'development',
+  NEXT_PUBLIC_APP_VERSION: '1.0.0',
+  NEXT_PUBLIC_API_BASE_URL: 'http://localhost:3000',
+  NEXT_PUBLIC_ENABLE_ANALYTICS: 'false',
+};
+
 // Mock Supabase
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
@@ -35,6 +53,11 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 describe('Unified Business Context', () => {
+  afterAll(() => {
+    // Restore original environment
+    process.env = originalEnv;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
