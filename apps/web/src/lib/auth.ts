@@ -168,7 +168,7 @@ export const auth = {
         result = await Promise.race([
           supabase.auth.signOut(),
           timeoutPromise
-        ]) as any;
+        ]);
         console.log('🔐 AUTH-SIGNOUT STEP 4: supabase.auth.signOut completed:', result);
       } catch (timeoutError) {
         console.warn('🔐 AUTH-SIGNOUT STEP 4: supabase.auth.signOut timed out:', timeoutError);

@@ -485,7 +485,7 @@ export function useBusinessContext(options?: { autoSelect?: boolean; skipCache?:
   const [error, setError] = useState<string | null>(null);
   
   // Stabilize options to prevent infinite re-renders
-  const stableOptions = useMemo(() => options, [options?.autoSelect, options?.skipCache]);
+  const stableOptions = useMemo(() => options, [options]);
 
   useEffect(() => {
     let mounted = true;

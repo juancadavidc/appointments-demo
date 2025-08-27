@@ -149,8 +149,6 @@ export const useAuthStore = create<AuthStore>()(
 
             // Set up auth state listener
             auth.onAuthStateChange(async (authUser: AuthUser | null) => {
-              const state = get();
-              
               if (authUser) {
                 // User logged in
                 const currentBusinessId = businessContext.getCurrentBusinessId();
@@ -557,6 +555,7 @@ export const useBusinessContext = (options?: { autoSelect?: boolean; skipCache?:
   const [error, setError] = React.useState<string | null>(null);
   
   // Stabilize options to prevent infinite re-renders
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const stableOptions = React.useMemo(() => options, [options?.autoSelect, options?.skipCache]);
 
   React.useEffect(() => {

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { LoginSchema, type LoginData, extractValidationErrors } from '@/components/forms/validation-schemas';
+import type { Session } from '@supabase/supabase-js';
 
 function LoginForm() {
   const router = useRouter();
@@ -55,6 +56,7 @@ function LoginForm() {
       console.log('🔐 LOGIN PAGE CLEANUP: Setting cancelled to true');
       cancelledRef.current = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, searchParams]);
 
   // Handle verification message from registration
@@ -69,7 +71,7 @@ function LoginForm() {
     }
   }, [searchParams]);
 
-  const checkAuthentication = async () => {
+  const checkAuthentication = useCallback(async () => {
     console.log('🔐 LOGIN AUTH CHECK STEP 1: Starting checkAuthentication, cancelled:', cancelledRef.current, 'hasRedirected:', hasRedirectedRef.current);
     
     // Double check - don't proceed if already redirected
@@ -108,7 +110,7 @@ function LoginForm() {
         const result = await Promise.race([
           auth.getSession(),
           timeoutPromise
-        ]) as any;
+        ]);
         
         // Check if cancelled after async operation
         if (cancelledRef.current) {
@@ -118,7 +120,7 @@ function LoginForm() {
         
         console.log('🔐 LOGIN AUTH CHECK STEP 8: Session verification race completed, result:', result);
         
-        const { data, error } = result;
+        const { data, error } = result as { data: { session: Session | null }, error: Error | null };
         
         if (error) {
           console.warn('🔐 LOGIN AUTH CHECK STEP 9: Session verification failed:', error.message);
@@ -160,7 +162,7 @@ function LoginForm() {
         console.log('🔐 LOGIN AUTH CHECK STEP 13: Skipped setting checkingAuth to false (cancelled or redirected)');
       }
     }
-  };
+  }, [searchParams]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

@@ -255,7 +255,7 @@ describe('BusinessSidebar', () => {
       clearBusinessContext: true,
       clearLocalStorage: true,
       redirectToLogin: true,
-      redirectUrl: '/login?reason=logout'
+      redirectUrl: '/login?logout=true'
     });
   });
 
