@@ -53,9 +53,6 @@ export async function GET(): Promise<NextResponse> {
       cookie.name.includes('auth')
     );
 
-    console.log('🔍 DEBUG AUTH - All cookies:', allCookies.length);
-    console.log('🔍 DEBUG AUTH - Supabase cookies:', supabaseCookies.length);
-
     // Try to authenticate
     const authClient = await createServerClientFromRequest();
     const { data: { user }, error: authError } = await authClient.auth.getUser();

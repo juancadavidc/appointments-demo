@@ -197,19 +197,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async () => {
     setIsLoading(true);
     try {
-      console.log('🔐 AuthContext: Starting basic signOut process');
-      
       // Clear business context before signing out
       await businessContext.clearBusinessContext();
       const result = await auth.signOut();
       
       if (result.error) {
-        console.error('🔐 AuthContext: Basic signOut failed:', result.error);
         throw new Error(result.error.message);
       }
-      
-      console.log('🔐 AuthContext: Basic signOut completed');
-      // User state will be updated via the auth state change listener
     } catch (error) {
       console.error('🔐 AuthContext: Sign out error:', error);
       
@@ -263,10 +257,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.error('🔐 AUTH-CONTEXT STEP 5d: Emergency cleanup also failed:', cleanupError);
         }
       } else {
-        console.log('🔐 AUTH-CONTEXT STEP 4: Enhanced signOut completed successfully');
-        console.log('🔐 AUTH-CONTEXT STEP 5: Clearing user state immediately...');
         setUser(null);
-        console.log('🔐 AUTH-CONTEXT STEP 6: User state cleared');
       }
       
       return result;
@@ -275,19 +266,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       // Emergency fallback - clear everything and redirect
       try {
-        console.log('🔐 AUTH-CONTEXT STEP 8: Performing emergency fallback logout');
         await businessContext.clearBusinessContext();
-        console.log('🔐 AUTH-CONTEXT STEP 8a: Emergency business context cleared');
         setUser(null);
-        console.log('🔐 AUTH-CONTEXT STEP 8b: Emergency user state cleared');
         
         if (config?.redirectToLogin && typeof window !== 'undefined') {
           const redirectUrl = config.redirectUrl || '/login?reason=emergency';
-          console.log('🔐 AUTH-CONTEXT STEP 8c: Emergency redirect to:', redirectUrl);
           window.location.replace(redirectUrl);
         }
       } catch (fallbackError) {
-        console.error('🔐 AUTH-CONTEXT STEP 8d: Emergency fallback failed:', fallbackError);
+        console.error('🔐 Emergency fallback failed:', fallbackError);
       }
       
       return { 
@@ -296,7 +283,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } 
       };
     } finally {
-      console.log('🔐 AUTH-CONTEXT STEP 9: Setting isLoading to false');
       setIsLoading(false);
     }
   };
