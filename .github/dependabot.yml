@@ -7,7 +7,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "06:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     reviewers:
       - "juda1804"
     commit-message:
