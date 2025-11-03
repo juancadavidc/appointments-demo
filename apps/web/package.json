@@ -42,7 +42,7 @@
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.54.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "critters": "^0.0.23",
